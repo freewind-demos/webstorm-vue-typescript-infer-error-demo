@@ -7,12 +7,8 @@
 <script lang="ts">
   import {Component, Vue, Watch} from 'vue-property-decorator';
   import TodoMvc from './components/TodoMvc.vue';
-  import VueRouter from 'vue-router'
-
-  Vue.use(VueRouter);
 
   @Component({
-    router: new VueRouter(),
     components: {
       TodoMvc,
     },
