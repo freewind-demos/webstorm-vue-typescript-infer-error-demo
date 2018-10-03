@@ -10,16 +10,17 @@
       <label for="toggle-all">Mark all as complete</label>
       <ul class="todo-list" v-for="(todo, index) in filteredTodos">
         <li class="todo"
-            v-bind:class="{completed:todo.completed, editing: todo.editing}"
-            @dblclick="editTodo(index)">
+            v-bind:class="{completed:todo.completed, editing: todo === editingTodo}"
+            @dblclick="editTodo(todo)">
           <div class="view">
-            <input type="checkbox" class="toggle" v-model="todo.completed">
+            <input type="checkbox" class="toggle" v-bind:checked="todo.completed"
+                @change="toggleTodo(index)">
             <label>{{todo.content}}</label>
             <button class="destroy" @click="removeTodo(index)"></button>
           </div>
-          <input type="text" class="edit" v-model="todo.contentForEditing"
+          <input type="text" class="edit" v-model="editingContent"
               @keyup.enter="doneEdit(index)" @blur="doneEdit(index)"
-              @keyup.esc="cancelEdit(index)">
+              @keyup.esc="cancelEdit()">
         </li>
       </ul>
     </section>
@@ -39,14 +40,7 @@
 
 <script lang="ts">
   import {Component, Prop, Vue} from 'vue-property-decorator';
-  import {replace} from '../utils/array-utils';
-
-  type TodoItem = {
-    content: string,
-    completed: boolean,
-    editing?: boolean,
-    contentForEditing?: string
-  }
+  import {storeGetter, storeMutation, TodoItem} from '../store';
 
   type FilterType = {
     path: string,
@@ -59,13 +53,13 @@
   @Component({})
   export default class TodoMvc extends Vue {
 
-    todos: TodoItem[] = [
-      {content: "sdfsf", completed: true},
-      {content: "wefsdf", completed: false},
-      {content: "2fsdf89", completed: false}
-    ];
+    get todos(): TodoItem[] {
+      return storeGetter(this.$store, 'todos')
+    }
 
     newTodo: string = '';
+    editingTodo: TodoItem | null = null;
+    editingContent: string | null = null;
 
     filters: FilterType[] = [
       {
@@ -104,11 +98,11 @@
     }
 
     get itemsLeft(): number {
-      return this.todos.filter(it => it.completed === false).length;
+      return this.todos.filter(it => !it.completed).length
     }
 
     createTodo() {
-      this.todos.push({
+      storeMutation(this.$store, 'addTodo', {
         content: this.newTodo,
         completed: false
       });
@@ -116,49 +110,47 @@
     }
 
     removeTodo(index: number) {
-      this.todos.splice(index, 1);
+      storeMutation(this.$store, 'removeTodo', index)
     }
 
     toggleAll() {
-      if (this.todos.every(it => it.completed)) {
-        this.todos.forEach(it => it.completed = false)
-      } else {
-        this.todos.forEach(it => it.completed = true)
-      }
+      storeMutation(this.$store, 'toggleAll', undefined);
     }
 
     clearCompleted() {
-      this.todos = this.todos.filter(it => !it.completed)
+      storeMutation(this.$store, 'clearCompleted', undefined);
     }
 
-    editTodo(index: number) {
-      this.todos.forEach(it => delete it.editing);
-      replace(this.todos, index, todo => {
-        todo.editing = true;
-        todo.contentForEditing = todo.content;
-        return todo
-      })
+    editTodo(todo: TodoItem) {
+      this.editingTodo = todo;
+      this.editingContent = todo.content;
     }
 
     doneEdit(index: number) {
-      replace(this.todos, index, todo => {
-        delete todo.editing;
-        if (todo.contentForEditing !== undefined) {
-          todo.content = todo.contentForEditing.trim();
-        }
-        delete todo.contentForEditing;
-        return todo.content ? todo : null
-      });
+      if (this.editingTodo === null) {
+        return;
+      }
+      const newTodo: TodoItem = {...this.editingTodo};
+      if (this.editingContent !== null) {
+        newTodo.content = this.editingContent.trim()
+      }
+      this.editingTodo = null;
+      this.editingContent = null;
+      if (newTodo.content) {
+        storeMutation(this.$store, 'updateTodo', {index, newTodo: newTodo});
+      } else {
+        storeMutation(this.$store, 'removeTodo', index);
+      }
     }
 
-    cancelEdit(index: number) {
-      replace(this.todos, index, todo => {
-        delete todo.editing;
-        delete todo.contentForEditing;
-        return todo;
-      })
+    cancelEdit() {
+      this.editingTodo = null;
+      this.editingContent = null;
     }
 
+    toggleTodo(index: number) {
+      storeMutation(this.$store, 'toggleTodo', index)
+    }
   }
 </script>
 

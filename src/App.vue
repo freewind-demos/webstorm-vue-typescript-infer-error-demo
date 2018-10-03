@@ -7,6 +7,7 @@
 <script lang="ts">
   import {Component, Vue, Watch} from 'vue-property-decorator';
   import TodoMvc from './components/TodoMvc.vue';
+  import {storeMutation} from './store';
 
   @Component({
     components: {
@@ -18,6 +19,7 @@
 
     mounted() {
       this.onRouteChange(this.$route);
+      storeMutation(this.$store, `init`, undefined)
     }
 
     @Watch('$route')
