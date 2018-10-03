@@ -1,29 +1,32 @@
 <template>
   <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+    <TodoMvc v-bind:currentPath="currentPath"/>
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator';
-import HelloWorld from './components/HelloWorld.vue';
+  import {Component, Vue, Watch} from 'vue-property-decorator';
+  import TodoMvc from './components/TodoMvc.vue';
+  import VueRouter from 'vue-router'
 
-@Component({
-  components: {
-    HelloWorld,
-  },
-})
-export default class App extends Vue {}
+  Vue.use(VueRouter);
+
+  @Component({
+    router: new VueRouter(),
+    components: {
+      TodoMvc,
+    },
+  })
+  export default class App extends Vue {
+    currentPath: string | null = null;
+
+    mounted() {
+      this.onRouteChange(this.$route);
+    }
+
+    @Watch('$route')
+    onRouteChange(to: {path: string}) {
+      this.currentPath = to.path
+    }
+  }
 </script>
-
-<style>
-#app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-</style>
