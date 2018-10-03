@@ -1,4 +1,5 @@
-# typescript-front-end-todomvc-demo
+TypeScript TodoMVC Vue with Router Demo
+=======================================
 
 ## Project setup
 ```
